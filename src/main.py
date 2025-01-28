@@ -6,12 +6,25 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import psutil
 
 
 def show_error_dialog(error_message):
     root.withdraw()
-    messagebox.showerror("Whoopsy", error_message)
+    messagebox.showerror("Error", error_message)
     root.quit()
+
+
+def is_process_running(process_name):
+    for process in psutil.process_iter(['name']):
+        try:
+            if process.info['name'] and process_name.lower() in process.info['name'].lower():
+                return True
+        except Exception as e:
+            show_error_dialog(e)
+    return False
+
+# the below moves files and folders
 
 
 def moveItems(source, destination):
@@ -20,12 +33,37 @@ def moveItems(source, destination):
             source, item)
         destination_file_path = os.path.join(
             destination, item)
+        # the below handles moving a non-empty folder from source when the destination has empty folder of same name
         if os.path.isdir(destination_file_path) and len(os.listdir(destination_file_path)) == 0:
             os.rmdir(destination_file_path)
             shutil.move(source_file_path, os.path.dirname(
                 destination_file_path))
         else:
             shutil.move(source_file_path, destination_file_path)
+
+# the below checks to see if moving is necessary and does if it is
+
+
+def movePlugins(source, destination):
+    if not os.path.exists(destination):
+       os.makedirs(destination)
+    if os.path.exists(source):
+        if not (len(os.listdir(source)) == 0 or
+                (os.path.exists(os.path.join(source, "qsc-managed-plugins")) and
+                 len(os.listdir(os.path.join(source, "qsc-managed-plugins"))) == 0)):
+            if len(os.listdir(destination)) == 0 or (
+                os.path.exists(os.path.join(destination, "qsc-managed-plugins")) and
+                len(os.listdir(os.path.join(destination, "qsc-managed-plugins"))) == 0
+            ):
+                if is_process_running('Q-Sys Designer.exe'):
+                    raise ValueError(
+                        'When switching between Plugins and No Plugins, please quit all instances of Designer.')
+                else:
+                    moveItems(source,
+                              destination)
+            else:
+                raise ValueError(
+                    "There are files/folders in both Plugins and Plugins-bypassed or Assets and Assets-bypassed (except for an empty qsc-managed-plugins folder), this shouldn't happen.")
 
 
 def parseVersion(version_string):
@@ -34,25 +72,26 @@ def parseVersion(version_string):
 
 def openDirectory(file_path, argument=None, supressplugs=False):
     try:
-        if ((os.path.exists(qsys_user_assets_dir_bypassed) and
-            not len(os.listdir(qsys_user_assets_dir_bypassed)) == 0) or
-            (os.path.exists(qsys_user_plugins_dir_bypassed) and
-                not len(os.listdir(qsys_user_plugins_dir_bypassed)) == 0)):
-            raise ValueError(
-                "-bypassed Folders already exist with contents.  Terminating to avoid overwriting")
-        if supressplugs:
-            moveItems(qsys_user_assets_dir, qsys_user_assets_dir_bypassed)
-            moveItems(qsys_user_plugins_dir, qsys_user_plugins_dir_bypassed)
         if os.path.exists(file_path):
+            if supressplugs:
+                movePlugins(qsys_user_assets_dir,
+                            qsys_user_assets_dir_bypassed)
+                movePlugins(qsys_user_plugins_dir,
+                            qsys_user_plugins_dir_bypassed)
+            else:
+                movePlugins(qsys_user_assets_dir_bypassed,
+                            qsys_user_assets_dir)
+                movePlugins(qsys_user_plugins_dir_bypassed,
+                            qsys_user_plugins_dir)
             if argument:
                 subprocess.Popen([file_path, argument])
             else:
                 os.startfile(file_path)
         else:
-            tk.messagebox.showerror("Error", f"File not found: {file_path}")
-        root.quit()
+            raise ValueError("File not found: {file_path}")
     except ValueError as e:
         show_error_dialog(str(e))
+    root.quit()
 
 
 def findDesignerExe(program_files_dir, folder_name):
@@ -95,9 +134,6 @@ qsys_user_plugins_dir_bypassed = os.path.join(
     os.path.dirname(qsys_user_plugins_dir), "Plugins-bypassed")
 
 
-
-
-
 if len(sys.argv) > 1:
     file_path = ' '.join(sys.argv[1:])
     version_number = getVersionFromFile(file_path)
@@ -124,35 +160,7 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     application_path = os.path.dirname(__file__)
 iconFile = 'Icon.ico'
-# root.iconbitmap(default=os.path.join(application_path, iconFile))
-
-
-
-'''
-Before doing anything, if bypassed folders exist with contents, check if 
-original folders are empty because QSD was last launched w/o plugins. If
-they are, move plugins back to original place from bypassed folders.  If 
-there is are plugins in both places, something is wrong and an error is thrown.
-'''
-try:
-    if os.path.exists(qsys_user_plugins_dir_bypassed):
-        if not len(os.listdir(qsys_user_plugins_dir_bypassed)) == 0:
-            if len(os.listdir(qsys_user_plugins_dir)) == 0:
-                moveItems(qsys_user_plugins_dir_bypassed,
-                          qsys_user_plugins_dir)
-            else:
-                raise ValueError(
-                    "There are files/folders in both Plugins and Plugins-bypassed, this shouldn't happen.")
-    if os.path.exists(qsys_user_assets_dir_bypassed):
-        if not len(os.listdir(qsys_user_assets_dir_bypassed)) == 0:
-            if len(os.listdir(qsys_user_assets_dir)) == 0 or len(os.listdir(os.path.join(qsys_user_assets_dir, "qsc-managed-plugins"))) == 0:
-                moveItems(qsys_user_assets_dir_bypassed, qsys_user_assets_dir)
-            else:
-                raise ValueError(
-                    "There are files/folders (except for an empty qsc-managed-plugins folder) in both Assets and Assets-bypassed, this shouldn't happen.")
-except ValueError as e:
-    show_error_dialog(str(e))
-
+root.iconbitmap(default=os.path.join(application_path, iconFile))
 
 
 if version_number:
