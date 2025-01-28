@@ -95,31 +95,7 @@ qsys_user_plugins_dir_bypassed = os.path.join(
     os.path.dirname(qsys_user_plugins_dir), "Plugins-bypassed")
 
 
-'''
-Before doing anything, if bypassed folders exist with contents, check if 
-original folders are empty because QSD was last launched w/o plugins. If
-they are, move plugins back to original place from bypassed folders.  If 
-there is are plugins in both places, something is wrong and an error is thrown.
-'''
 
-try:
-    if os.path.exists(qsys_user_plugins_dir_bypassed):
-        if not len(os.listdir(qsys_user_plugins_dir_bypassed)) == 0:
-            if len(os.listdir(qsys_user_plugins_dir)) == 0:
-                moveItems(qsys_user_plugins_dir_bypassed,
-                          qsys_user_plugins_dir)
-            else:
-                raise ValueError(
-                    "There are files/folders in both Plugins and Plugins-bypassed, this shouldn't happen.")
-    if os.path.exists(qsys_user_assets_dir_bypassed):
-        if not len(os.listdir(qsys_user_assets_dir_bypassed)) == 0:
-            if len(os.listdir(qsys_user_assets_dir)) == 0 or len(os.listdir(os.path.join(qsys_user_assets_dir, "qsc-managed-plugins"))) == 0:
-                moveItems(qsys_user_assets_dir_bypassed, qsys_user_assets_dir)
-            else:
-                raise ValueError(
-                    "There are files/folders (except for an empty qsc-managed-plugins folder) in both Assets and Assets-bypassed, this shouldn't happen.")
-except ValueError as e:
-    show_error_dialog(str(e))
 
 
 if len(sys.argv) > 1:
@@ -150,10 +126,39 @@ elif __file__:
 iconFile = 'Icon.ico'
 # root.iconbitmap(default=os.path.join(application_path, iconFile))
 
+
+
+'''
+Before doing anything, if bypassed folders exist with contents, check if 
+original folders are empty because QSD was last launched w/o plugins. If
+they are, move plugins back to original place from bypassed folders.  If 
+there is are plugins in both places, something is wrong and an error is thrown.
+'''
+try:
+    if os.path.exists(qsys_user_plugins_dir_bypassed):
+        if not len(os.listdir(qsys_user_plugins_dir_bypassed)) == 0:
+            if len(os.listdir(qsys_user_plugins_dir)) == 0:
+                moveItems(qsys_user_plugins_dir_bypassed,
+                          qsys_user_plugins_dir)
+            else:
+                raise ValueError(
+                    "There are files/folders in both Plugins and Plugins-bypassed, this shouldn't happen.")
+    if os.path.exists(qsys_user_assets_dir_bypassed):
+        if not len(os.listdir(qsys_user_assets_dir_bypassed)) == 0:
+            if len(os.listdir(qsys_user_assets_dir)) == 0 or len(os.listdir(os.path.join(qsys_user_assets_dir, "qsc-managed-plugins"))) == 0:
+                moveItems(qsys_user_assets_dir_bypassed, qsys_user_assets_dir)
+            else:
+                raise ValueError(
+                    "There are files/folders (except for an empty qsc-managed-plugins folder) in both Assets and Assets-bypassed, this shouldn't happen.")
+except ValueError as e:
+    show_error_dialog(str(e))
+
+
+
 if version_number:
     version_label = ttk.Label(
         root, text=f"Version from file: {version_number}", font=("Arial", 14))
-    version_label.pack(padx=10, pady=3)
+    version_label.grid(padx=10, pady=3, row=0, column=0)
 
 max_button_width = max([len(os.path.basename(os.path.dirname(exe_path)))
                        for exe_path in designer_executables], default=0)
@@ -164,8 +169,8 @@ for index, exe_path in enumerate(designer_executables):
                        command=lambda path=exe_path: openDirectory(path, file_path))
     plugin_launch_suppress_button = tk.Button(
         root, text="Launch w/o Plugins", command=lambda path=exe_path: openDirectory(path, file_path, True))
-    button.grid(row=index, column=0, padx=20, pady=3)
-    plugin_launch_suppress_button.grid(row=index, column=1, padx=5, pady=3)
+    button.grid(row=index+1, column=0, padx=20, pady=3)
+    plugin_launch_suppress_button.grid(row=index+1, column=1, padx=5, pady=3)
 
 
 root.mainloop()
