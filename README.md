@@ -66,11 +66,11 @@ If Q-SYS Designer is running when changing plugin modes, the launcher will detec
 ![Files in both folders error](screenshots/error_files.png)
 
 
-If you see this, manually sort out the situation in Documents\QSC.  If this happens through normal usage of this launcher, pleasemake an issue / let Andy know!
+If you see this, manually sort out the situation in Documents\QSC.  If this happens through normal usage of this launcher, please make an issue / let Andy know!
 
 ---
 
 ## Thanks To:  
 
 - [Uwe Weissbach](https://github.com/UW-WMW), who developed the launcher this came from.  
-- Zach Lisko ([mckay115](https://github.com/mckay115)), who developed and earlier launcher.  
+- Zach Lisko ([mckay115](https://github.com/mckay115)), who developed an earlier launcher.  
